@@ -4,18 +4,31 @@
 
 #include "Particle.h"
 #line 1 "c:/Users/ryan.trisnojoyo/Documents/Particle/projects/RS485_Spark/src/RS485_Spark.ino"
+/*
+Spark Wiring Diagram                Particle Wiring
+3-5V                        ->          3.3V
+RX-I                        ->          TX
+TX-O                        ->          RX
+RTS                         ->          D2              (any digital output, in this example D2)
+GND                         ->          GND
+                                    UltraSonic
+A                           ->        Brown (RS485 B+)
+B                           ->        Green (RS485 A-)
+GND                         ->        GND
 
+*/
 void setup();
 void loop();
 void Send(byte * cmd, byte* ret);
 void sendCommand(byte *cmd);
-#line 2 "c:/Users/ryan.trisnojoyo/Documents/Particle/projects/RS485_Spark/src/RS485_Spark.ino"
+#line 14 "c:/Users/ryan.trisnojoyo/Documents/Particle/projects/RS485_Spark/src/RS485_Spark.ino"
 int rts = D2;
 
+int relayPin = A0;
 uint32_t currTime;
 uint32_t prevTime;
 byte data[12];
-byte sendRS485Request[6]={0xAA,0x01,0x03,0x00,0x00,0xAE};
+byte sendRS485Request[6]={0xAA,0x01,0x03,0x00,0x00,0xAE}; //Send Request for STATUS Command
 size_t bytes;
 float resultTemp = 0;
 float resultUltra = 0;
@@ -24,7 +37,9 @@ void setup()
 {
  Serial1.begin(19200);
  pinMode(rts, OUTPUT);
+ pinMode(relayPin, OUTPUT);
  digitalWrite(rts, LOW);
+ digitalWrite(relayPin, LOW);
  
 
  prevTime = millis();
@@ -37,7 +52,7 @@ void loop()
  currTime = millis();
 
  // Send data once per second
- if (currTime - prevTime >= 10000) {
+ if (currTime - prevTime >= 30000) {
  prevTime = currTime;
 
  // Send command
@@ -49,16 +64,11 @@ void loop()
 
 void Send(byte * cmd, byte* ret) {
  // use default send function
+ digitalWrite(relayPin, HIGH);
+ delay(5000);
  sendCommand(cmd);
-
+ 
  // receive answer
- //size_t bytes = Serial1.readBytes(ret, 5);
- // NULL-terminate to convert to string
- //ret[bytes] = '\0';
-  
-  
-  //size_t bytes = Serial1.readBytesUntil(1, ret, 6);
-
   if (Serial1.available()){  //Read return data package (NOTE: Demo is just for your reference, the data package haven't be calibrated yet)
     for(int j=0; j < 12; j++){
       ret[j++]=(Serial1.read());
@@ -85,15 +95,13 @@ void Send(byte * cmd, byte* ret) {
     Serial.print("Level: ");
     Serial.print(resultUltra);
     Serial.println(" In");
- // debug: can be accessed from caller
- //strcpy(debugString, ret);
+
   }
   else{
     Serial.println("Error reading RS485");
   }
 
-
-
+ digitalWrite(relayPin, LOW);
 }
 
 /*sendCommand(...)******************************************************************************

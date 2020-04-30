@@ -13,6 +13,7 @@ GND                         ->        GND
 */
 int rts = D2;
 
+int relayPin = A0;
 uint32_t currTime;
 uint32_t prevTime;
 byte data[12];
@@ -25,7 +26,9 @@ void setup()
 {
  Serial1.begin(19200);
  pinMode(rts, OUTPUT);
+ pinMode(relayPin, OUTPUT);
  digitalWrite(rts, LOW);
+ digitalWrite(relayPin, LOW);
  
 
  prevTime = millis();
@@ -38,7 +41,7 @@ void loop()
  currTime = millis();
 
  // Send data once per second
- if (currTime - prevTime >= 10000) {
+ if (currTime - prevTime >= 30000) {
  prevTime = currTime;
 
  // Send command
@@ -50,8 +53,10 @@ void loop()
 
 void Send(byte * cmd, byte* ret) {
  // use default send function
+ digitalWrite(relayPin, HIGH);
+ delay(5000);
  sendCommand(cmd);
-
+ 
  // receive answer
   if (Serial1.available()){  //Read return data package (NOTE: Demo is just for your reference, the data package haven't be calibrated yet)
     for(int j=0; j < 12; j++){
@@ -85,7 +90,7 @@ void Send(byte * cmd, byte* ret) {
     Serial.println("Error reading RS485");
   }
 
-
+ digitalWrite(relayPin, LOW);
 }
 
 /*sendCommand(...)******************************************************************************
